@@ -22,8 +22,8 @@ local config = wezterm.config_builder()
 -- Ctrl+Shift+L         launcher shell yang tersedia
 -- Ctrl+Shift+Alt+R     rename tab; input kosong mengembalikan judul otomatis
 -- Ctrl+Shift+W         tutup pane dengan pemeriksaan konfirmasi
--- Shift+klik kanan    paste; klik kanan biasa tidak menempelkan clipboard
--- Ctrl+klik kiri      buka hyperlink; klik biasa hanya menyeleksi
+-- Klik kanan          paste langsung dari clipboard
+-- Klik kiri pada link buka hyperlink; drag menyeleksi dan menyalin teks
 -- Pintasan bawaan tetap aktif: Ctrl+Shift+Alt+Arrow resize pane,
 -- Ctrl+Shift+Z zoom pane, Ctrl+Shift+P command palette, Ctrl+Shift+R reload.
 --
@@ -512,13 +512,11 @@ config.key_tables = {
 }
 
 -- ================================
--- MOUSE: PASTE DISENGAJA, LINK VIA CTRL
+-- MOUSE: PASTE LANGSUNG, KLIK LINK ATAU DRAG SELEKSI
 -- ================================
 config.mouse_bindings = {
-  { event = { Down = { streak = 1, button = 'Right' } }, mods = 'SHIFT', action = act.PasteFrom 'Clipboard' },
-  { event = { Up = { streak = 1, button = 'Left' } }, mods = 'NONE', action = act.CompleteSelection 'ClipboardAndPrimarySelection' },
-  { event = { Down = { streak = 1, button = 'Left' } }, mods = 'CTRL', action = act.Nop },
-  { event = { Up = { streak = 1, button = 'Left' } }, mods = 'CTRL', action = act.OpenLinkAtMouseCursor },
+  { event = { Down = { streak = 1, button = 'Right' } }, mods = 'NONE', action = act.PasteFrom 'Clipboard' },
+  -- Binding kiri bawaan membedakan klik link dengan drag untuk copy.
 }
 
 return config
