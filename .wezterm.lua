@@ -5,9 +5,10 @@ local config = wezterm.config_builder()
 
 -- WezTerm 20240203 atau lebih baru; tidak memerlukan instalasi Lua terpisah.
 -- Pindahkan file ini ke ~/.wezterm.lua atau ~/.config/wezterm/wezterm.lua.
--- Perubahan: tabline.wez neon menggantikan formatter tab/status lama; leader,
--- resize mode, pencarian, copy mode, dan workspace untuk workflow coding.
+-- Perubahan: palet soft-contrast untuk coding di atas gambar; biru/cyan dibedakan,
+-- abu-abu terang untuk teks sekunder, aksen tab/status tidak lagi neon penuh.
 -- Background opsional/path portabel tetap tersedia; Git sistem tidak diubah.
+-- Lapisan dasar solid menghalangi desktop tembus; gambar tetap ditampilkan.
 -- Plugin: https://github.com/michaelbrusegard/tabline.wez
 -- Internet diperlukan saat plugin pertama diunduh; berikutnya memakai cache
 -- WezTerm (cache tidak ikut file backup ini). Git diperlukan untuk status branch.
@@ -154,26 +155,40 @@ if launch_menu[1] then
 end
 
 -- ================================
--- ARTHUR + PALET NEON
+-- PALET SOFT-CONTRAST: TEKS UTAMA NETRAL, AKSEN TIDAK MENYILAUKAN
 -- ================================
-local colors = wezterm.get_builtin_color_schemes().Arthur
-colors.foreground = '#c8d6e5'
-colors.background = '#12181f'
-colors.cursor_bg = '#ff6b00'
-colors.cursor_fg = '#080c10'
-colors.cursor_border = '#ff6b00'
-colors.selection_fg = '#080c10'
-colors.selection_bg = '#00e5ff'
-colors.ansi = {
-  '#080c10', '#ff3d3d', '#00ff9f', '#ffe600',
-  '#00e5ff', '#ff00ff', '#00fff7', '#c8d6e5',
+-- ANSI 0 tetap gelap untuk aplikasi yang memakainya sebagai background.
+-- ANSI 8 (bright black) sengaja lebih terang agar komentar/status terbaca.
+-- Aplikasi truecolor (misalnya tema Neovim) mengatur warna teksnya sendiri.
+local colors = {
+  foreground = '#d8dee9',
+  background = '#161b26',
+  cursor_bg = '#e6b17e',
+  cursor_fg = '#10151e',
+  cursor_border = '#e6b17e',
+  compose_cursor = '#e6c384',
+  selection_fg = '#edf2f7',
+  selection_bg = '#344563',
+  ansi = {
+    '#10151e', '#f08f9c', '#a3c995', '#e6c384',
+    '#91b9ed', '#c4a7e7', '#8bd5ca', '#cdd6e3',
+  },
+  brights = {
+    '#a4b0c3', '#f5a6b2', '#b5d9a7', '#f0d49a',
+    '#accbf5', '#d5bdf2', '#a2e1d8', '#edf2f7',
+  },
+  tab_bar = { background = '#10151e' },
+  scrollbar_thumb = '#66778f',
+  split = '#a4b0c3',
+  copy_mode_active_highlight_bg = { Color = '#e6c384' },
+  copy_mode_active_highlight_fg = { Color = '#10151e' },
+  copy_mode_inactive_highlight_bg = { Color = '#344563' },
+  copy_mode_inactive_highlight_fg = { Color = '#edf2f7' },
+  quick_select_label_bg = { Color = '#e6b17e' },
+  quick_select_label_fg = { Color = '#10151e' },
+  quick_select_match_bg = { Color = '#8bd5ca' },
+  quick_select_match_fg = { Color = '#10151e' },
 }
-colors.brights = {
-  '#1a2233', '#ff6b6b', '#00ffb3', '#fff176',
-  '#40eeff', '#ff40ff', '#40fffa', '#ffffff',
-}
-colors.tab_bar = { background = '#080c10' }
-colors.scrollbar_thumb = '#ff6b00'
 config.colors = colors
 
 -- ================================
@@ -185,9 +200,11 @@ if background_image ~= '' then
   local path = absolute and background_image or (wezterm.config_dir .. '/' .. background_image)
   if file_exists(path) then
     config.background = {
+      -- Dasar opaque mencegah teks/jendela desktop bocor melalui gambar.
+      { source = { Color = colors.background }, width = '100%', height = '100%', opacity = 1.0 },
       {
         source = { File = path },
-        hsb = { brightness = 0.3, saturation = 1.0 },
+        hsb = { brightness = 0.3, saturation = 0.8 },
         opacity = 0.7,
         attachment = 'Fixed',
         repeat_x = 'NoRepeat', repeat_y = 'NoRepeat',
@@ -204,6 +221,8 @@ end
 -- FONT, WINDOW & TAB BAR
 -- ================================
 config.font = wezterm.font_with_fallback { font_family, 'JetBrains Mono' }
+-- Bold tetap memakai bright ANSI: output black+bold tidak menjadi tak terbaca.
+config.bold_brightens_ansi_colors = true
 config.font_size = 14.0
 config.window_background_opacity = 1.0
 config.window_padding = { left = 16, right = 16, top = 16, bottom = 16 }
@@ -329,7 +348,7 @@ local function git_component(window, pane)
     cached = {
       directory = directory, checked_at = now, detail = detail,
       text = status == '' and '' or wezterm.format {
-        { Foreground = { Color = failed and '#ff6b6b' or '#ff6b00' } },
+        { Foreground = { Color = failed and colors.ansi[2] or colors.cursor_bg } },
         { Text = ' ' .. wezterm.truncate_right(status, 24) .. ' ' },
       },
     }
@@ -371,19 +390,19 @@ tabline.setup {
     theme = colors,
     theme_overrides = {
       normal_mode = {
-        a = { fg = '#080c10', bg = '#00e5ff' },
-        b = { fg = '#00e5ff', bg = '#1a2233' },
-        c = { fg = colors.foreground, bg = '#080c10' },
+        a = { fg = colors.ansi[1], bg = colors.ansi[7] },
+        b = { fg = colors.ansi[7], bg = '#252e40' },
+        c = { fg = colors.foreground, bg = colors.ansi[1] },
       },
       resize_mode = {
-        a = { fg = '#080c10', bg = '#ff6b00' },
-        b = { fg = '#ff6b00', bg = '#1a2233' },
-        c = { fg = colors.foreground, bg = '#080c10' },
+        a = { fg = colors.cursor_fg, bg = colors.cursor_bg },
+        b = { fg = colors.cursor_bg, bg = '#252e40' },
+        c = { fg = colors.foreground, bg = colors.ansi[1] },
       },
       tab = {
-        active = { fg = '#080c10', bg = '#ff6b00' },
-        inactive = { fg = '#8ba4b8', bg = '#080c10' },
-        inactive_hover = { fg = '#00e5ff', bg = '#1a2233' },
+        active = { fg = colors.cursor_fg, bg = colors.cursor_bg },
+        inactive = { fg = '#a4b0c3', bg = colors.ansi[1] },
+        inactive_hover = { fg = colors.ansi[7], bg = '#252e40' },
       },
     },
     component_separators = { left = '', right = '' },
