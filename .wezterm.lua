@@ -42,9 +42,10 @@ local config = wezterm.config_builder()
 -- ================================
 -- PERSONALISASI
 -- ================================
--- Kosong = warna solid. Isi nanti dengan path absolut atau relatif ke file Lua,
--- misalnya 'assets/background.png'. Gambar yang belum tersedia tidak wajib ada.
-local background_image = ''
+-- Kosong = warna solid. Isi path di dalam [[...]] agar backslash Windows aman.
+-- Contoh: [[C:\Users\Nama Kamu\Pictures\background.png]] atau [[assets/background.png]].
+-- Gambar yang belum tersedia tidak wajib ada; path relatif mengikuti file Lua.
+local background_image = [[]]
 -- Font bawaan agar siap setelah reset. Ubah ke 'Courier Prime' setelah dipasang.
 local font_family = 'JetBrains Mono'
 local tab_title_width = 32
