@@ -22,6 +22,7 @@ local config = wezterm.config_builder()
 -- Ctrl+Shift+L         launcher shell yang tersedia
 -- Ctrl+Shift+Alt+R     rename tab; input kosong mengembalikan judul otomatis
 -- Ctrl+Shift+W         tutup pane dengan pemeriksaan konfirmasi
+-- Shift+Enter, Alt+Enter  baris baru di Claude Code (Ctrl+J bawaan tetap jalan)
 -- Klik kanan          paste langsung dari clipboard
 -- Klik kiri pada link buka hyperlink; drag menyeleksi dan menyalin teks
 -- Pintasan bawaan tetap aktif: Ctrl+Shift+Alt+Arrow resize pane,
@@ -229,7 +230,12 @@ config.window_padding = { left = 16, right = 16, top = 16, bottom = 16 }
 config.window_decorations = 'TITLE | RESIZE'
 config.default_cursor_style = 'BlinkingBlock'
 config.enable_scroll_bar = true
-config.scrollback_lines = 10000
+config.scrollback_lines = 30000
+-- Render GPU + batas FPS: output Claude Code yang deras tetap mulus.
+config.front_end = 'WebGpu'
+config.webgpu_power_preference = 'HighPerformance'
+config.max_fps = 120
+config.animation_fps = 60
 -- Opsi wajib tabline diatur langsung; apply_to_config plugin juga menghapus
 -- padding/dekorasi window, jadi tidak digunakan.
 config.use_fancy_tab_bar = false
@@ -330,8 +336,9 @@ local function git_status(directory)
   return 'Git: error', true, stderr
 end
 
--- Tabline merespons mode tiap 500 ms; Git dibatasi satu cek per 3 detik/window.
-config.status_update_interval = 500
+-- Tabline merespons mode tiap 1 detik; Git dibatasi satu cek per 5 detik/window
+-- (run_child_process sinkron, jadi dijaga jarang agar UI tidak tersendat).
+config.status_update_interval = 1000
 local git_by_window = {}
 local function git_component(window, pane)
   local directory = local_directory(pane)
@@ -340,7 +347,7 @@ local function git_component(window, pane)
   end
   local id, now = window:window_id(), os.time()
   local cached = git_by_window[id]
-  if not cached or cached.directory ~= directory or now - cached.checked_at >= 3 then
+  if not cached or cached.directory ~= directory or now - cached.checked_at >= 5 then
     local status, failed, detail = git_status(directory)
     if detail and (not cached or detail ~= cached.detail) then
       wezterm.log_warn('Status Git: ' .. detail)
@@ -456,6 +463,9 @@ config.keys = {
       end),
     },
   },
+  -- Claude Code: baris baru. Alt+Enter bawaan WezTerm (fullscreen) ditimpa.
+  { key = 'Enter', mods = 'SHIFT', action = act.SendString('\x1b\r') },
+  { key = 'Enter', mods = 'ALT', action = act.SendString('\x1b\r') },
   { key = 'c', mods = 'CTRL|SHIFT', action = act.CopyTo 'Clipboard' },
   { key = 'v', mods = 'CTRL|SHIFT', action = act.PasteFrom 'Clipboard' },
   -- Leader = Ctrl+Space, lepaskan, lalu tekan tombol berikut.
